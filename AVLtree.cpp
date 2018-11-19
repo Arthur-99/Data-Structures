@@ -1,6 +1,5 @@
 #include <iostream>
 #include <queue>
-#include "utility.hpp"
 
 using namespace std;
 
@@ -176,32 +175,3 @@ private:
     }
 
 };
-
-#include <cstdlib>
-#include <ctime>
-
-int main()
-{
-    srand(time(0));
-
-    AVLtree<int> a;
-
-    for (int i=0;i<100000;i++) a.insert(rand()%200000);
-
-//    printf("height=%d\n",a.height());
-//    a.inOrder();
-//    a.levelOrder();
-
-
-//    for (int i=0;i<200000;i++) a.remove(i);
-//    printf("height=%d\n",a.height());
-//    a.inOrder();
-//    a.levelOrder();
-
-    for (int i=0;i<2000;i++) {
-        if (a.find(i)) cout<<a.find(i)->data<<' ';
-    }
-
-
-    return 0;
-}
