@@ -1,9 +1,3 @@
-#include <iostream>
-
-using namespace std;
-
-const int N=1e6+7;
-
 void qsort(int* a,int l,int r){
     if (l>=r) return;
     int x=a[r];
@@ -18,10 +12,6 @@ void qsort(int* a,int l,int r){
     qsort(a,l,i-1);
     qsort(a,i+1,r);
 }
-
-int A[N];
-int B[N];
-int C[N];
 
 template <class T>
 class lheap{
@@ -82,66 +72,3 @@ private:
         return h1;
     }
 };
-
-struct item{
-    int value;
-    int ai;
-    int bi;
-
-    item(int v,int a,int b){value=v;ai=a;bi=b;}
-    bool operator>(const item& i){return value>i.value;}
-    bool operator<(const item& i){return value<i.value;}
-};
-
-int main()
-{
-    ios::sync_with_stdio(false);
-    cin.tie(0);
-    cout.tie(0);
-
-    int n;
-    cin>>n;
-    for (int i=1;i<=n;i++) cin>>A[i];
-    for (int i=1;i<=n;i++) cin>>B[i];
-
-    qsort(A,1,n);
-    qsort(B,1,n);
-
-    int a=1;
-    int b=1;
-/*
-    while (a*b<=n){
-        if (A[a+1]+B[b]>A[a]+B[b+1]) a++;
-        else if (A[a+1]+B[b]<A[a]+B[b+1]) b++;
-        else {
-            a++;b++;
-        }
-    }
-
-    int k=1;
-    for (int i=1;i<=a;i++){
-        for (int j=1;j<=b;j++){
-            C[k++]=A[i]+B[j];
-        }
-    }
-
-    qsort(C,1,k-1);
-    for (int i=1;i<=n;i++) cout<<C[i]<<' ';
-*/
-
-    lheap<item> q;
-    for (int i=1;i<=n;i++)q.enQueue(item(A[i]+B[1],i,1));
-
-    for (int i=1;i<=n;i++){
-        item tmp=q.deQueue();
-        cout<<tmp.value<<' ';
-
-        int tmp_v=tmp.value,tmp_a=tmp.ai,tmp_b=tmp.bi;
-
-        if (tmp_b+1<=n) q.enQueue(item(tmp_v-B[tmp_b]+B[tmp_b+1],tmp_a,tmp_b+1));
-    }
-
-    cout<<flush;
-
-    return 0;
-}
