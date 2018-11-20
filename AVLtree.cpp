@@ -26,8 +26,8 @@ public:
 
     node* find(const T& value){return find(value,root);}
 
-    void insert(const T& value){insert(value,root);++Size;}
-    void remove(const T& value){remove(value,root);}//bug : --Size 不应该在这
+    void insert(const T& value){insert(value,root);}//bug : ++Size 涓嶅簲璇ュ湪杩欓噷
+    void remove(const T& value){remove(value,root);}//bug : --Size 虏禄脫娄赂脙脭脷脮芒
 
     bool empty(){return root==nullptr;}
     size_t size(){return Size;}
