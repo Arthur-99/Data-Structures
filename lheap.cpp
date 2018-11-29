@@ -41,7 +41,7 @@ private:
         }
     }
 
-    int npl(node* rt){return (rt)?rt->npl:0;}
+    int npl(node* rt){return (rt)?rt->npl:-1;}
 
     node* merge(node* h1,node* h2){
         if (h1==nullptr) return h2;
@@ -51,8 +51,7 @@ private:
         h1->r=merge(h1->r,h2);
 
         if (npl(h1->r)>npl(h1->l)) swap(h1->r,h1->l);
-        if (h1->r==nullptr) h1->npl=0;
-        else h1->npl=npl(h1->l)+1;
+        h1->npl=npl(h1->l)+1;
 
         return h1;
     }
