@@ -17,7 +17,7 @@ public:
     int Find1(int x){
         //return (parent[x]<0)?x:(parent[x]=Find(parent[x]));
         if (parent[x]<0) return x;
-        else return parent[x]=Find(parent[x]);
+        else return parent[x]=Find1(parent[x]);
     }
     int Find(int x){
         int start=x,tmp;
