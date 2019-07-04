@@ -46,7 +46,6 @@ class queue
         return storage[_front];
     }
 };
-
 }
 
 #endif
