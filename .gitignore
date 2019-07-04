@@ -1,2 +1,6 @@
 # vscode
 /.vscode/
+
+# cpp
+*.cpp
+*.out

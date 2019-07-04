@@ -1,3 +1,6 @@
+#ifndef SJTU_CS358_QUEUE
+#define SJTU_CS358_QUEUE
+
 namespace SJTU_CS358 {
 
 template<class T>
@@ -45,3 +48,5 @@ class queue
 };
 
 }
+
+#endif
