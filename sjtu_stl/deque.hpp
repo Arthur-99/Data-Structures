@@ -20,7 +20,7 @@ class deque
     static const int bufferSize = 50;
 
     block* head;
-    block* tmp;
+    block* fuck_you;
     block* tail;
 
   public:
@@ -81,10 +81,10 @@ deque<T>::deque()
     dequeSize = 0;
 
     head = new block;
-    tmp = new block;
+    fuck_you = new block;
     tail = new block;
 
-    link(head, tmp, tail);
+    link(head, fuck_you, tail);
 }
 
 template<class T>
@@ -109,7 +109,7 @@ template<class T>
 deque<T>::~deque()
 {
     clear();
-    delete tmp; // clear
+    delete fuck_you; // clear
     delete head;
     delete tail;
 }
@@ -122,7 +122,7 @@ deque<T>::operator=(const deque& other)
         return *this;
 
     clear();
-    delete tmp; // clear
+    delete fuck_you; // clear
     link(head, tail);
 
     dequeSize = other.dequeSize;
@@ -253,8 +253,8 @@ deque<T>::clear()
     }
     dequeSize = 0;
 
-    tmp = new block;
-    link(head, tmp, tail);
+    fuck_you = new block;
+    link(head, fuck_you, tail);
 }
 template<class T>
 typename deque<T>::iterator
@@ -407,267 +407,338 @@ struct deque<T>::block
     node* blockTail;
     int blockSize;
 
-    node* move(int i) const
-    {
-        node* p = blockHead->next;
-        if (i >= 0)
-            for (int j = 0; j < i && p; j++)
-                p = p->next;
-        else if (i == -1) {
-            return blockHead;
-        }
-        return p;
-    }
+    node* move(int i) const; // move to the i-th element
 
-    block()
-    {
-        left = right = nullptr;
+    block();                 // empty block
+    block(const block& l);   // copy
+    block(const block* l);   // copy
+    block(node* h, node* t); // shallow copy, designed for the function divide()
 
-        blockHead = new node;
-        blockTail = new node;
-        link(blockHead, blockTail);
-
-        blockSize = 0;
-    }
-    block(const block& l)
-    {
-        left = right = nullptr;
-
-        blockHead = new node;
-        blockTail = new node;
-        link(blockHead, blockTail);
-
-        blockSize = 0;
-
-        node* p = l.blockHead->next;
-        while (p != l.blockTail) {
-            push_back(*p->data); // blockSize++ simultaneously
-            p = p->next;
-        }
-    }
-    block(const block* l)
-    {
-        left = right = nullptr;
-
-        blockHead = new node;
-        blockTail = new node;
-        link(blockHead, blockTail);
-
-        blockSize = 0;
-
-        node* p = l->blockHead->next;
-        while (p != l->blockTail) {
-            push_back(*p->data); // blockSize++ simultaneously
-            p = p->next;
-        }
-    }
-
-    // Given l's head and tail, defines a block, this function is designed
-    // for function divide()
-    block(node* h, node* t)
-    {
-        blockHead = h;
-        blockTail = t;
-    }
-
-    ~block()
-    {
-        clear();
-        delete blockHead;
-        delete blockTail;
-    }
+    ~block();
 
     bool empty() { return blockSize == 0; }
 
-    void link(node*& p, node*& q)
-    {
-        p->next = q;
-        q->prev = p;
-    }
-    void link(node*& p, node*& q, node*& r)
-    {
-        p->next = q;
-        q->prev = p;
-        q->next = r;
-        r->prev = q;
-    }
-    void clear()
-    {
-        node* p = blockHead->next;
-        node* q;
-        while (p != blockTail) {
-            q = p->next;
-            delete p;
-            p = q;
-        }
-
-        link(blockHead, blockTail);
-        blockSize = 0;
-    }
+    void link(node*& p, node*& q);
+    void link(node*& p, node*& q, node*& r);
+    void clear();
 
     /*
         inserts value before q
         returns a pointer of the inserted node(value)
     */
-    node* insert(node* q, const T& value)
-    {
-        node* p = new node(value);
-        link(q->prev, p, q);
-        blockSize++;
-        return p;
-    }
+    node* insert(node* q, const T& value);
 
     /*
         returns a pointer of the node saving the following element, if q
        points to the last element of deque, the node pointer of end() will
-       be returned PS: iterator is constructed with 2 pointers, one points
+       be returned. PS: iterator is constructed with 2 pointers, one points
        to the block in which it is located and the other points to the very
        node containing the 'T* data'
     */
-    node* remove(block*& p, node* q)
-    {
-        link(q->prev, q->next);
-        node* ret = q->next; // next不一定什么东西
-
-        if (ret == blockTail) {
-            if (right->blockSize) {
-                ret = right->blockHead->next;
-                p = p->right;
-            }
-        }
-
-        blockSize--;
-        delete q;
-        return ret;
-    }
+    node* remove(block*& p, node* q);
 
     void push_back(const T& x) { insert(blockTail, x); }
     void push_front(const T& x) { insert(blockHead->next, x); }
 
-    /*
-        returns the index in the block,
-        if it doesn't exist in the block at all, returns -1
-    */
-    int id(const T& x)
-    {
-        node* p = blockHead->next;
-        for (int i = 0; i < blockSize + 1; i++) {
-            if (*(p->data) == x)
-                return i; // bug *(p->data)
-            p = p->next;
-        }
-        return -1;
-    }
-    int id(node* x)
-    {
-        node* p = blockHead->next;
-        for (int i = 0; i < blockSize + 1; i++) {
-            if (p == x)
-                return i;
-            p = p->next;
-        }
-        return -1;
-    }
+    // find index
+    int id(const T& x);
+    int id(node* x);
 
     /*
         merges this block with the smaller one of the left or right block,
         redefines this block,
         returns a pointer to the new block
     */
-    block* merge()
-    {
-        // TODO : merges with the smaller one
-        if (left->blockSize) {
-            block* this_l = left->left;
-            block* this_r = right;
-
-            block* P = left;
-
-            // add P to this then delete P
-            node* w = P->blockHead->next;
-            node* ww = P->blockTail->prev;
-
-            link(ww, blockHead->next);
-            link(blockHead, w);
-
-            blockSize += P->blockSize;
-
-            link(P->blockHead, P->blockTail);
-            delete P;
-
-            this_l->right = this;
-            this_r->left = this;
-            left = this_l;
-            right = this_r;
-
-        } else if (right->blockSize) {
-            block* this_l = left;
-            block* this_r = right->right;
-
-            block* Q = right;
-
-            // add Q to this then delete Q
-            node* w = Q->blockHead->next;
-            node* ww = Q->blockTail->prev;
-
-            link(blockTail->prev, w);
-            link(ww, blockTail);
-
-            blockSize += Q->blockSize;
-
-            link(Q->blockHead, Q->blockTail);
-            delete Q;
-
-            this_l->right = this;
-            this_r->left = this;
-            left = this_l;
-            right = this_r;
-        }
-
-        return this;
-    }
+    block* merge();
 
     /*
         divides this block into 2 parts 'equally',
         redefines this block,
         returns a pointer to the block containing node* x
     */
-    block* divide(node* x)
-    {
-        block* this_l = left;
+    block* divide(node* x);
+};
+
+// implementation
+#pragma region
+template<class T>
+typename deque<T>::node*
+deque<T>::block::move(int i) const
+{
+    node* p = blockHead->next;
+    if (i >= 0)
+        for (int j = 0; j < i && p; j++)
+            p = p->next;
+    else if (i == -1) {
+        return blockHead;
+    }
+    return p;
+}
+template<class T>
+deque<T>::block::block()
+{
+    left = right = nullptr;
+
+    blockHead = new node;
+    blockTail = new node;
+    link(blockHead, blockTail);
+
+    blockSize = 0;
+}
+template<class T>
+deque<T>::block::block(const block& l)
+{
+    left = right = nullptr;
+
+    blockHead = new node;
+    blockTail = new node;
+    link(blockHead, blockTail);
+
+    blockSize = 0;
+
+    node* p = l.blockHead->next;
+    while (p != l.blockTail) {
+        push_back(*p->data); // blockSize++ simultaneously
+        p = p->next;
+    }
+}
+template<class T>
+deque<T>::block::block(const block* l)
+{
+    left = right = nullptr;
+
+    blockHead = new node;
+    blockTail = new node;
+    link(blockHead, blockTail);
+
+    blockSize = 0;
+
+    node* p = l->blockHead->next;
+    while (p != l->blockTail) {
+        push_back(*p->data); // blockSize++ simultaneously
+        p = p->next;
+    }
+}
+
+// Given l's head and tail, defines a block, this function is designed
+// for function divide()
+template<class T>
+deque<T>::block::block(node* h, node* t)
+{
+    blockHead = h;
+    blockTail = t;
+}
+template<class T>
+deque<T>::block::~block()
+{
+    clear();
+    delete blockHead;
+    delete blockTail;
+}
+template<class T>
+void
+deque<T>::block::link(node*& p, node*& q)
+{
+    p->next = q;
+    q->prev = p;
+}
+template<class T>
+void
+deque<T>::block::link(node*& p, node*& q, node*& r)
+{
+    p->next = q;
+    q->prev = p;
+    q->next = r;
+    r->prev = q;
+}
+template<class T>
+void
+deque<T>::block::clear()
+{
+    node* p = blockHead->next;
+    node* q;
+    while (p != blockTail) {
+        q = p->next;
+        delete p;
+        p = q;
+    }
+
+    link(blockHead, blockTail);
+    blockSize = 0;
+}
+
+/*
+    inserts value before q
+    returns a pointer of the inserted node(value)
+*/
+template<class T>
+typename deque<T>::node*
+deque<T>::block::insert(node* q, const T& value)
+{
+    node* p = new node(value);
+    link(q->prev, p, q);
+    blockSize++;
+    return p;
+}
+
+/*
+    returns a pointer of the node saving the following element, if q
+   points to the last element of deque, the node pointer of end() will
+   be returned PS: iterator is constructed with 2 pointers, one points
+   to the block in which it is located and the other points to the very
+   node containing the 'T* data'
+*/
+template<class T>
+typename deque<T>::node*
+deque<T>::block::remove(block*& p, node* q)
+{
+    link(q->prev, q->next);
+    node* ret = q->next; // next不一定什么东西
+
+    if (ret == blockTail) {
+        if (right->blockSize) {
+            ret = right->blockHead->next;
+            p = p->right;
+        }
+    }
+
+    blockSize--;
+    delete q;
+    return ret;
+}
+
+/*
+    returns the index in the block,
+    if it doesn't exist in the block at all, returns -1
+*/
+template<class T>
+int
+deque<T>::block::id(const T& x)
+{
+    node* p = blockHead->next;
+    for (int i = 0; i < blockSize + 1; i++) {
+        if (*(p->data) == x)
+            return i; // bug *(p->data)
+        p = p->next;
+    }
+    return -1;
+}
+template<class T>
+int
+deque<T>::block::id(node* x)
+{
+    node* p = blockHead->next;
+    for (int i = 0; i < blockSize + 1; i++) {
+        if (p == x)
+            return i;
+        p = p->next;
+    }
+    return -1;
+}
+
+/*
+    merges this block with the smaller one of the left or right block,
+    redefines this block,
+    returns a pointer to the new block
+*/
+template<class T>
+typename deque<T>::block*
+deque<T>::block::merge()
+{
+    // TODO : merges with the smaller one
+    if (left->blockSize) {
+        block* this_l = left->left;
         block* this_r = right;
 
-        // divides this block into 2 parts
-        node* p = move(blockSize / 2);
-        node* q = p->next;
+        block* P = left;
 
-        node* p_n = new node;
-        node* q_p = new node;
-        link(p, p_n);
-        link(q_p, q);
+        // add P to this then delete P
+        node* w = P->blockHead->next;
+        node* ww = P->blockTail->prev;
 
-        block* Q = new block(q->prev, blockTail);
-        // block* P=new block(blockHead,p->next);
-        blockTail = p->next;
+        link(ww, blockHead->next);
+        link(blockHead, w);
 
-        // sets the 2 parts
-        Q->blockSize = blockSize - blockSize / 2 - 1;
-        blockSize = blockSize / 2 + 1;
+        blockSize += P->blockSize;
 
-        right = Q;
+        link(P->blockHead, P->blockTail);
+        delete P;
 
-        Q->left = this;
-        Q->right = this_r;
+        this_l->right = this;
+        this_r->left = this;
+        left = this_l;
+        right = this_r;
 
-        this_r->left = Q;
+    } else if (right->blockSize) {
+        block* this_l = left;
+        block* this_r = right->right;
 
-        // returns the pointer to block containing x
-        if (Q->id(x) == -1)
-            return this;
-        else
-            return Q;
+        block* Q = right;
+
+        // add Q to this then delete Q
+        node* w = Q->blockHead->next;
+        node* ww = Q->blockTail->prev;
+
+        link(blockTail->prev, w);
+        link(ww, blockTail);
+
+        blockSize += Q->blockSize;
+
+        link(Q->blockHead, Q->blockTail);
+        delete Q;
+
+        this_l->right = this;
+        this_r->left = this;
+        left = this_l;
+        right = this_r;
     }
-};
+
+    return this;
+}
+
+/*
+    divides this block into 2 parts 'equally',
+    redefines this block,
+    returns a pointer to the block containing node* x
+*/
+template<class T>
+typename deque<T>::block*
+deque<T>::block::divide(node* x)
+{
+    block* this_l = left;
+    block* this_r = right;
+
+    // divides this block into 2 parts
+    node* p = move(blockSize / 2);
+    node* q = p->next;
+
+    node* p_n = new node;
+    node* q_p = new node;
+    link(p, p_n);
+    link(q_p, q);
+
+    block* Q = new block(q->prev, blockTail);
+    // block* P=new block(blockHead,p->next);
+    blockTail = p->next;
+
+    // sets the 2 parts
+    Q->blockSize = blockSize - blockSize / 2 - 1;
+    blockSize = blockSize / 2 + 1;
+
+    right = Q;
+
+    Q->left = this;
+    Q->right = this_r;
+
+    this_r->left = Q;
+
+    // returns the pointer to block containing x
+    if (Q->id(x) == -1)
+        return this;
+    else
+        return Q;
+}
+#pragma endregion
 }
 #pragma endregion
 
@@ -720,18 +791,18 @@ class deque<T>::iterator
             return operator-(-n);
         }
 
-        iterator tmp = *this;
+        iterator fuck_you = *this;
 
         n += list_p->id(node_p);
 
-        while (n >= tmp.list_p->blockSize && tmp.list_p->blockSize) {
-            if (tmp.list_p->right->blockSize == 0)
+        while (n >= fuck_you.list_p->blockSize && fuck_you.list_p->blockSize) {
+            if (fuck_you.list_p->right->blockSize == 0)
                 break; /// end()
-            n -= tmp.list_p->blockSize;
-            tmp.list_p = tmp.list_p->right;
+            n -= fuck_you.list_p->blockSize;
+            fuck_you.list_p = fuck_you.list_p->right;
         }
 
-        return iterator(tmp.list_p, tmp.list_p->move(n), deque_p);
+        return iterator(fuck_you.list_p, fuck_you.list_p->move(n), deque_p);
     }
     iterator operator-(int n) const
     {
@@ -740,19 +811,21 @@ class deque<T>::iterator
             return operator+(-n);
         }
 
-        iterator tmp = *this;
+        iterator fuck_you = *this;
 
         n += list_p->blockSize - list_p->id(node_p) - 1;
 
-        while (n >= tmp.list_p->blockSize && tmp.list_p->blockSize) {
-            if (tmp.list_p->left->blockSize == 0)
+        while (n >= fuck_you.list_p->blockSize && fuck_you.list_p->blockSize) {
+            if (fuck_you.list_p->left->blockSize == 0)
                 break; /// begin()
-            n -= tmp.list_p->blockSize;
-            tmp.list_p = tmp.list_p->left;
+            n -= fuck_you.list_p->blockSize;
+            fuck_you.list_p = fuck_you.list_p->left;
         }
 
         return iterator(
-          tmp.list_p, tmp.list_p->move(tmp.list_p->blockSize - n - 1), deque_p);
+          fuck_you.list_p,
+          fuck_you.list_p->move(fuck_you.list_p->blockSize - n - 1),
+          deque_p);
     }
 
     int operator-(const iterator& rhs) const
@@ -820,7 +893,7 @@ class deque<T>::iterator
         if (node_p->data == nullptr && list_p->right->blockSize == 0)
             throw invalid_iterator{};
 
-        iterator tmp = *this;
+        iterator fuck_you = *this;
         if (node_p == list_p->blockTail->prev &&
             list_p->right->blockSize == 0) {
             // last elem
@@ -835,7 +908,7 @@ class deque<T>::iterator
                 throw invalid_iterator{};
             }
         }
-        return tmp;
+        return fuck_you;
     }
     iterator& operator++()
     {
@@ -865,13 +938,13 @@ class deque<T>::iterator
         if (node_p->prev->data == nullptr && list_p->left->blockSize == 0)
             throw invalid_iterator{};
 
-        iterator tmp = *this;
+        iterator fuck_you = *this;
         if (node_p == list_p->blockHead->next) {
             list_p = list_p->left;
             node_p = list_p->blockTail->prev;
         } else
             node_p = node_p->prev;
-        return tmp;
+        return fuck_you;
     }
     iterator& operator--()
     {
@@ -948,16 +1021,16 @@ class deque<T>::const_iterator
         if (n < 0) {
             return operator-(-n);
         }
-        iterator tmp = *this;
-        return const_iterator(tmp + n);
+        iterator fuck_you = *this;
+        return const_iterator(fuck_you + n);
     }
     const_iterator operator-(int n) const
     {
         if (n <= 0) {
             return operator+(-n);
         }
-        iterator tmp = *this;
-        return const_iterator(tmp - n);
+        iterator fuck_you = *this;
+        return const_iterator(fuck_you - n);
     }
 
     int operator-(const const_iterator& rhs) const
@@ -981,25 +1054,25 @@ class deque<T>::const_iterator
 
     const_iterator operator++(int)
     {
-        iterator tmp = *this;
-        *this = const_iterator(++tmp);
-        return const_iterator(tmp);
+        iterator fuck_you = *this;
+        *this = const_iterator(++fuck_you);
+        return const_iterator(fuck_you);
     }
     const_iterator& operator++()
     {
-        iterator tmp = *this;
-        return *this = const_iterator(++tmp);
+        iterator fuck_you = *this;
+        return *this = const_iterator(++fuck_you);
     }
     const_iterator operator--(int)
     {
-        iterator tmp = *this;
-        *this = const_iterator(--tmp);
-        return const_iterator(tmp);
+        iterator fuck_you = *this;
+        *this = const_iterator(--fuck_you);
+        return const_iterator(fuck_you);
     }
     const_iterator& operator--()
     {
-        iterator tmp = *this;
-        return *this = const_iterator(--tmp);
+        iterator fuck_you = *this;
+        return *this = const_iterator(--fuck_you);
     }
 
     T operator*() const
